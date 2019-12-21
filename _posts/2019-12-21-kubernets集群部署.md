@@ -153,7 +153,7 @@
        ```
        
   3. 配置service  
-    ``` 
+    ```   
     <table>
     <td bgcolor=#FF00FF>
     apiVersion: v1 

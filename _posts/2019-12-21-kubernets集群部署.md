@@ -154,8 +154,6 @@
        
   3. 配置service  
     ```   
-    <table>
-    <td bgcolor=#FF00FF>
     apiVersion: v1 
     kind: Service 
     metadata:
@@ -172,8 +170,6 @@
       - port: 9300
         name: inter-node
       clusterIP: None 
-     </td>
-     </table>
      ```
 
 

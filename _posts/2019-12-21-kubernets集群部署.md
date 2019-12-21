@@ -169,7 +169,7 @@
         port: 9200
       - port: 9300
         name: inter-node
-      clusterIP: None 
+      clusterIP: None   
       ```
 
 

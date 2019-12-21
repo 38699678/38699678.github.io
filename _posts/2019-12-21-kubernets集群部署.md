@@ -153,7 +153,7 @@
        ```
        
   3. 配置service  
-    ``` yml
+    ``` yml  
     apiVersion: v1 
     kind: Service 
     metadata:

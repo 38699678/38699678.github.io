@@ -76,81 +76,81 @@
         apps: elasticsearch
     namespace: kube-ops
     spec:
-    replicas: 3
-    revisionHistoryLimit: 5
-    selector:
-        matchLabels:
-        apps: elasticsearch
-    serviceName: elasticsearch
-    template:
-        metadata:
-        labels: 
-            apps: elasticsearch
-        namespace: kube-ops
-        spec:
-        containers:
-        - name: elasticsearch
-            image: elasticsearch:7.4.2
-            imagePullPolicy: IfNotPresent
-            resources:
-            requests:
-                cpu: 100m
-            limits:
-                cpu: 1000m
-                memory: 2Gi
-            ports:
-            - name: rest 
-            containerPort: 9200
-            - name: inter-node
-            containerPort: 9300 
-            volumeMounts:
-            - name: data
-            mountPath: /usr/share/elasticsearch/data
-            env:
-            - name: cluster.name
-            value: panda-logs
-            - name: node.name
-            valueFrom:
-                fieldRef:
-                fieldPath: metadata.name
-            - name: discovery.seed_hosts #此处是配置elastic集群。
-            value: "elasticsearch-0.elasticsearch.kube-ops,elasticsearch-1.elasticsearch.kube-ops,elasticsearch-2.elasticsearch.kube-ops"
-            - name: cluster.initial_master_nodes
-            value: "elasticsearch-0,elasticsearch-1,elasticsearch-2"
-            - name: ES_JAVA_OPTS
-            value: "-Xms512m -Xmx512m"
-        initContainers:
-        - name: chown-data
-            image: busybox:1.31.1
-            imagePullPolicy: IfNotPresent
-            command: ["sh","-c","chown -R 1000:1000 /usr/share/elasticsearch/data"]
-            securityContext:
-              privileged: true
-            volumeMounts:
-            - name: data
-              mountPath: /usr/share/elasticsearch/data
-        - name: increase-vm-max-map
-            image: busybox
-            command: ["sysctl", "-w", "vm.max_map_count=262144"]
-            securityContext:
-              privileged: true
-        - name: increase-fd-ulimit
-            image: busybox
-            command: ["sh", "-c", "ulimit -n 65536"]
-            securityContext:
-              privileged: true
-    volumeClaimTemplates:  #此处设置存储声明模板
-        - metadata:
-            name: data
-            labels:
+      replicas: 3
+      revisionHistoryLimit: 5
+      selector:
+          matchLabels:
+          apps: elasticsearch
+      serviceName: elasticsearch
+      template:
+          metadata:
+          labels: 
               apps: elasticsearch
-        spec:
-            accessModes: ["ReadWriteOnce"]
-            storageClassName: es-data-db #调用上方创建的存储类
-            resources:
+          namespace: kube-ops
+          spec:
+          containers:
+          - name: elasticsearch
+              image: elasticsearch:7.4.2
+              imagePullPolicy: IfNotPresent
+              resources:
               requests:
-                storage: 50Gi #申请的存储大小，但是发现这个不是个硬限制
-    ```
+                  cpu: 100m
+              limits:
+                  cpu: 1000m
+                  memory: 2Gi
+              ports:
+              - name: rest 
+              containerPort: 9200
+              - name: inter-node
+              containerPort: 9300 
+              volumeMounts:
+              - name: data
+              mountPath: /usr/share/elasticsearch/data
+              env:
+              - name: cluster.name
+              value: panda-logs
+              - name: node.name
+              valueFrom:
+                  fieldRef:
+                  fieldPath: metadata.name
+              - name: discovery.seed_hosts #此处是配置elastic集群。
+              value: "elasticsearch-0.elasticsearch.kube-ops,elasticsearch-1.elasticsearch.kube-ops,elasticsearch-2.elasticsearch.kube-ops"
+              - name: cluster.initial_master_nodes
+              value: "elasticsearch-0,elasticsearch-1,elasticsearch-2"
+              - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+          initContainers:
+          - name: chown-data
+              image: busybox:1.31.1
+              imagePullPolicy: IfNotPresent
+              command: ["sh","-c","chown -R 1000:1000 /usr/share/elasticsearch/data"]
+              securityContext:
+                privileged: true
+              volumeMounts:
+              - name: data
+                mountPath: /usr/share/elasticsearch/data
+          - name: increase-vm-max-map
+              image: busybox
+              command: ["sysctl", "-w", "vm.max_map_count=262144"]
+              securityContext:
+                privileged: true
+          - name: increase-fd-ulimit
+              image: busybox
+              command: ["sh", "-c", "ulimit -n 65536"]
+              securityContext:
+                privileged: true
+      volumeClaimTemplates:  #此处设置存储声明模板
+          - metadata:
+              name: data
+              labels:
+                apps: elasticsearch
+          spec:
+              accessModes: ["ReadWriteOnce"]
+              storageClassName: es-data-db #调用上方创建的存储类
+              resources:
+                requests:
+                  storage: 50Gi #申请的存储大小，但是发现这个不是个硬限制
+       ```
     3. 配置service  
     ``` yml
     apiVersion: v1 

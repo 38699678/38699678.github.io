@@ -3,7 +3,7 @@
 - elasticsearch：日志存储、搜索
 - kibana：日志展示
 - logstash：将日志索引信息从kafka取出并导入到elasticsearch
-- pilot：阿里开发的专门抓取容器服务的日志收集代理。
+- pilot：阿里开发的专门抓取容器服务的日志收集代理。  
   https://github.com/AliyunContainerService/log-pilot
 - kafka：作为日志收集系统的中间件架构，pilot将日志存入kafka，等待logstash读取。节点比较多的情况下适用，如果架构不大可以忽略
   

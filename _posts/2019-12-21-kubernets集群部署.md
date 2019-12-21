@@ -151,7 +151,8 @@
                 requests:
                   storage: 50Gi #申请的存储大小，但是发现这个不是个硬限制
        ```
-    3. 配置service  
+       
+  3. 配置service  
     ``` yml
     apiVersion: v1 
     kind: Service 

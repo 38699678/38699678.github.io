@@ -154,7 +154,8 @@
        
   3. 配置service  
     ``` yml
-    <table><td bgcolor=black>
+    <table>
+    <td bgcolor=black>
     apiVersion: v1 
     kind: Service 
     metadata:
@@ -171,6 +172,7 @@
       - port: 9300
         name: inter-node
       clusterIP: None 
-     </td></table>
+     </td>
+     </table>
      ```
 

@@ -58,7 +58,7 @@
     #kubectl get sc  
     ```
 3. 部署elasticsearch   
-   1. 创建动态存储类
+   1. 创建动态存储类  
    ``` yml
    apiVersion: storage.k8s.io/v1
    kind: StorageClass
@@ -66,7 +66,7 @@
      name: es-data-db
    provisioner: k8s-logs-sc #此处就是上面提醒的值
    ```
-   2. 创建elastic部署文件
+   2. 创建elastic部署文件  
    ``` yml
     apiVersion: apps/v1 
     kind: StatefulSet

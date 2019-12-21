@@ -155,7 +155,7 @@
   3. 配置service  
     ``` yml
     <table>
-    <td bgcolor=black>
+    <td bgcolor=#FF00FF>
     apiVersion: v1 
     kind: Service 
     metadata:

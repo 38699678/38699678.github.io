@@ -1,3 +1,4 @@
+# kubernetes-HPA自动扩缩容
 ### 一.部署metrics server
 k8s实现hap自动扩缩容，必须有metrics server的支持。所以要现在k8s集群中部署metrics-server服务。  
 - 编辑权限配置文件。metrics-server-rbac.yml

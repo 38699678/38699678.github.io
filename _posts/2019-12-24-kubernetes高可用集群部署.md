@@ -1,8 +1,8 @@
 ## kubernetes高可用集群部署  
 一 前期准备  
 - 架构图
-![Image text](../img/架构.png)
-在架构中的所有节点运行以下这些操作。
+ ![Image text](../img/架构.png)
+ 在架构中的所有节点运行以下这些操作。
   ``` shell
   #systemctl stop firewalld 
   #systemctl disable firewalld

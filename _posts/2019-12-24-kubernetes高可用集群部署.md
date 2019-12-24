@@ -1,9 +1,10 @@
 ## kubernetes高可用集群部署  
 一 前期准备  
 - 架构图
- ![Image text](../img/架构.png)
+
+ ![Image text](../img/架构.png)  
  在架构中的所有节点运行以下这些操作。
-  ``` shell
+ ``` shell
   #systemctl stop firewalld 
   #systemctl disable firewalld
   #setenforce 0
@@ -42,5 +43,5 @@ modprobe -- ip_vs_sh
 modprobe -- nf_conntrack_ipv4
 EOF
   #chmod 755 /etc/sysconfig/modules/ipvs.modules
-  #bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4
+  #bash /etc/sysconfig/modules/ipvs.modules && lsmod | grep -e ip_vs -e nf_conntrack_ipv4  
   ``` 

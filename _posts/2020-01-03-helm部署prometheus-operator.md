@@ -1,4 +1,4 @@
-## helm部署prometheus-operator  
+# helm部署prometheus-operator  
 ### 一、promethues基础知识  
 该文采用prometheus operator以及helm工具在kubernetes集群上部署。
 关于什么是 Prometheus Operator 以及为什么要用 Prometheus Operator？

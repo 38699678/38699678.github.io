@@ -1,1 +1,4 @@
-###helm部署prometheus-operator
+## helm部署prometheus-operator  
+一、promethues基础知识
+  ![Image text](../img/prometheus.jepg)
+  

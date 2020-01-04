@@ -6,7 +6,7 @@
 Operator 是以软件的方式定义运维过程，是一系列打包、部署和管理 Kubernetes 应用的方法。简单  来说就是将运维过程中的手动操作转换为自动化流程，通过 Kubernetes 的 CRD（Custom   Resource Definition）将部署前后的相关操作自动化，同时以参数的方式提供了灵活性。而   Prometheus Operator 是 CoreOS 提供的一整套 Prometheus 的 Operator，方便了 Prometheus 的部署。  
 ```
 - Prometheus架构图  
-![Image text](../img/prometheus.png)
+ ![Image text](../img/prometheus.png)
 - Prometheus Server  
   Prometheus Server 是监控系统的服务端，服务端通过服务发现的方式，抓取被监控服务的指标，或者通过 pushgateway 的间接抓取，抓取到指标数据后，通过特定的存储引擎进行存储，同时暴露一个 HTTP 服务，提供用 PromQL 来进行数据查询。注意，Prometheus 是定时采样数据，而不是全量数据。 
 - Exporter  

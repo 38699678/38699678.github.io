@@ -3,10 +3,10 @@
 该文采用prometheus operator以及helm工具在kubernetes集群上部署。
 关于什么是 Prometheus Operator 以及为什么要用 Prometheus Operator？
 ``` text
-Operator 是以软件的方式定义运维过程，是一系列打包、部署和管理 Kubernetes 应用的方法。
-简单  来说就是将运维过程中的手动操作转换为自动化流程，通过 Kubernetes 的 CRD（Custom   Resource Definition）
-将部署前后的相关操作自动化，同时以参数的方式提供了灵活性。而Prometheus Operator 
-是 CoreOS 提供的一整套 Prometheus 的 Operator，方便了 Prometheus 的部署。  
+Operator 是以软件的方式定义运维过程，是一系列打包、部署和管理 Kubernetes 应用的方法。  
+简单  来说就是将运维过程中的手动操作转换为自动化流程，通过 Kubernetes 的 CRD（Custom   Resource Definition）  
+将部署前后的相关操作自动化，同时以参数的方式提供了灵活性。而Prometheus Operator   
+是 CoreOS 提供的一整套 Prometheus 的 Operator，方便了 Prometheus 的部署。    
 ```
 - Prometheus架构图  
  ![Image text](../img/prometheus.png)

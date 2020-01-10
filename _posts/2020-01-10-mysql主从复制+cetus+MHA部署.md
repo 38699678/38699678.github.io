@@ -306,3 +306,67 @@
     +--------------------+
     6 rows in set (0.00 sec)
   ```
+- 测试mha
+  当前主库和从库都处于正常状态，mha会定时扫描和检测主从的状态，以及复制的状态。
+  1. 关闭master（192.168.120.13）的数据库。
+  2. 查看hma的日志输出
+  #cat bss/bss.log
+  ``` bash
+  Sat Jan 11 00:19:05 2020 - [warning] At least one of monitoring servers is not reachable from this script. This is likely a network problem. Failover should not happen.
+  Sat Jan 11 00:19:06 2020 - [warning] Got error on MySQL connect: 2003 (Can't connect to MySQL server on '192.168.120.13' (111))
+  Sat Jan 11 00:19:06 2020 - [warning] Connection failed 2 time(s)..
+	Sat Jan 11 00:19:07 2020 - [warning] Got error on MySQL connect: 2003 (Can't connect to MySQL server on '192.168.120.13' (111))
+	Sat Jan 11 00:19:07 2020 - [warning] Connection failed 3 time(s)..
+	Sat Jan 11 00:19:08 2020 - [warning] Got error on MySQL connect: 2003 (Can't connect to MySQL server on '192.168.120.13' (111))
+	Sat Jan 11 00:19:08 2020 - [warning] Connection failed 4 time(s)..
+	Sat Jan 11 00:19:08 2020 - [warning] Secondary network check script returned errors. Failover should not start so checking server status again. Check network settings for details.
+	Sat Jan 11 00:19:09 2020 - [warning] Got error on MySQL connect: 2003 (Can't connect to MySQL server on '192.168.120.13' (111))
+	Sat Jan 11 00:19:09 2020 - [warning] Connection failed 1 time(s)..
+	Sat Jan 11 00:19:09 2020 - [info] Executing secondary network check script: /usr/bin/masterha_secondary_check -s 192.168.120.14 -s 192.168.120.15 --user=root --master_host=192.168.120.13 --master_port=6606  --user=root  --mas
+	ter_host=192.168.120.13  --master_ip=192.168.120.13  --master_port=6606 --master_user=mhaty --master_password=mysql123 --ping_type=SELECT
+	Sat Jan 11 00:19:09 2020 - [info] Executing SSH check script: exit 0
+	Sat Jan 11 00:19:09 2020 - [info] HealthCheck: SSH to 192.168.120.13 is reachable.
+	Monitoring server 192.168.120.14 is reachable, Master is not reachable from 192.168.120.14. OK.
+	Monitoring server 192.168.120.15 is reachable, Master is not reachable from 192.168.120.15. OK.
+	Sat Jan 11 00:19:09 2020 - [info] Master is not reachable from all other monitoring servers. Failover should start.
+	Sat Jan 11 00:19:10 2020 - [warning] Got error on MySQL connect: 2003 (Can't connect to MySQL server on '192.168.120.13' (111))
+	Sat Jan 11 00:19:10 2020 - [warning] Connection failed 2 time(s)..
+	Sat Jan 11 00:19:11 2020 - [warning] Got error on MySQL connect: 2003 (Can't connect to MySQL server on '192.168.120.13' (111))
+	Sat Jan 11 00:19:11 2020 - [warning] Connection failed 3 time(s)..
+	Sat Jan 11 00:19:12 2020 - [warning] Got error on MySQL connect: 2003 (Can't connect to MySQL server on '192.168.120.13' (111))
+	Sat Jan 11 00:19:12 2020 - [warning] Connection failed 4 time(s)..
+	Sat Jan 11 00:19:12 2020 - [warning] Master is not reachable from health checker!
+	Sat Jan 11 00:19:12 2020 - [warning] Master 192.168.120.13(192.168.120.13:6606) is not reachable!
+	Sat Jan 11 00:19:12 2020 - [warning] SSH is reachable.
+	``` 
+  日志中可以看到，他会向cetus写入一条sql语句,将备用master转成正式。
+  ``` bash
+    All other slaves should start replication from here. Statement should be: CHANGE MASTER TO MASTER_HOST='192.168.120.14'  MASTER_PORT=6626, MASTER_AUTO_POSITION=1, MASTER_USER='repl', MASTER_PASSWORD='xxx';
+  ```
+  3. 当原master恢复正常后，可以将它恢复为slave节点  
+  #change master to master_host='192.168.120.14',master_user='repl',master_port=6626,master_password="mysql123",master_auto_position = 1;  
+  #start slave;  
+  4. 在192.168.120.14（当前的master）  
+  mysql> show slave hosts;
++-----------+------+------+-----------+--------------------------------------+
+| Server_id | Host | Port | Master_id | Slave_UUID                           |
++-----------+------+------+-----------+--------------------------------------+
+|      6606 |      | 6606 |      6635 | 34e91deb-32d7-11ea-ae86-000c29350c8b |
+|      6636 |      | 6616 |      6635 | 43fd16e7-32d7-11ea-9400-000c29ca619a |
++-----------+------+------+-----------+--------------------------------------+
+  5. 在cetus的管理端，去更新主从信息
+  ySQL [(none)]> select * from backends；
++-------+-------------+---------------------+---------+------+-----------------+------------+------------+-------------+
+| PID   | backend_ndx | address             | state   | type | slave delay(ms) | idle_conns | used_conns | total_conns |
++-------+-------------+---------------------+---------+------+-----------------+------------+------------+-------------+
+| 19544 | 1           | 192.168.120.13:6606 | down    | ro   | 0               | 0          | 0          | 0           |
+| 19544 | 2           | 192.168.120.15:6616 | unknown | ro   | 0               | 100        | 0          | 100         |
+| 19544 | 3           | 192.168.120.14:6626 | up      | rw   | NULL            | 100        | 0          | 100         |
+| 19545 | 1           | 192.168.120.13:6606 | down    | ro   | 0               | 0          | 0          | 0           |
+| 19545 | 2           | 192.168.120.15:6616 | unknown | ro   | 0               | 100        | 0          | 100         |
+| 19545 | 3           | 192.168.120.14:6626 | up      | rw   | NULL            | 100        | 0          | 100         |
++-------+-------------+---------------------+---------+------+-----------------+------------+------------+-------------+
+  update backends set state='up' , type='ro' where address='192.168.120.13:6606';
+  
+  
+  

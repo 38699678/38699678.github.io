@@ -136,11 +136,12 @@
     purge_relay_logs：消除中继日志（不会堵塞SQL线程）
 ```
 - 安装MHA 
+  在MHA服务节点和下面每个master和slave节点中都执行安装yum命令。mha4mysql-node-0.58-0.el7.centos.noarch.rpm要在每个节点中安装，mha4mysql-manager-0.58-0.el7.centos.noarch.rpm要在mha的管理节点安装
   ``` bash 
   #yum -y install perl perl-DBI perl-DBD-MySQL perl-IO-Socket-SSL perl-Time-HiRes perl-DBD-MySQL perl-Config-Tiny perl-Log-Dispatch perl-Parallel-ForkManager perl-Config-IniFiles  
   #yum install -y mha4mysql-manager-0.58-0.el7.centos.noarch.rpm mha4mysql-node-0.58-0.el7.centos.noarch.rpm  
   #mkdir -p /data/masterha/{bss,rcs,osmc}  
-  
+  ```
   在集群的master和slave节点中，配置无密码登陆，确保在任何一个节点都可以登陆其他节点。  
   #ssh-keygen -t rsa  
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.3    
@@ -149,6 +150,7 @@
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.15   
   创建配置文件
     cat /data/masterha/bss.cnf  
+  ``` bash
     [server default]
     user=mhaty #此处为mha的监控mysql的用户，需要在数据库中创建
     password="uqnFBzTpmhg4wF3ay1bvQ5o" #用户的密码
@@ -183,6 +185,14 @@
     hostname=172.18.178.230
     master_binlog_dir=/data/mysql_6626
     port=6626
+  ```
+  配置mha连接cetus文件
+  cat bss/bss_cetus.cnf
+  ``` bash
+  middle_ipport=192.168.120.3:9606
+  middle_user=admin
+  middle_pass=admin
+  ```
 - 部署cetus  
   ``` bash
   #git clone https://github.com/cetus-tools/cetus.git  

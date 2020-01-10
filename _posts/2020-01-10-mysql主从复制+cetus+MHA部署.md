@@ -265,10 +265,10 @@
   #masterha_check_ssh --conf=/data/masterha/bss.cnf  
   manager节点检查主从复制状态  
   #masterha_check_repl --conf=/data/masterha/bss.cnf  
-- 启动mha和cetus
-  启动mha
-  masterha_manager --conf=/data/masterha/bss.cnf  --ignore_last_failover &  
-  启动cetus  
+- 启动mha和cetus  
+  启动mha  
+  #masterha_manager --conf=/data/masterha/bss.cnf  --ignore_last_failover &  
+  启动cetus      
   bin/cetus --defaults-file=conf/proxy.conf &  
 - 测试cetus  
   #mysql -h127.0.0.1 -uadmin -padmin -P9606  

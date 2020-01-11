@@ -27,12 +27,118 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
 - Grafana
   Prometheus 提供了一个简单的 web UI 界面，用于查询数据，查看告警、配置等，官方推荐使用另一个开源项目 grafana 来做指标的可视化展示，制作仪表盘等。
 ### 二、在kubernetes中部署prometheus
+- 部署helm
+  ``` bash
+  #wget https://get.helm.sh/helm-v3.0.0-linux-amd64.tar.gz
+  #tar -zxvf helm-v3.0.0-linux-amd64.tar.gz
+  #cp linux-amd64/helm /usr/local/bin/
+  #添加官方仓库地址
+  #helm repo add stable https://kubernetes-charts.storage.googleapis.com
+  #查看本地已添加的存储库
+  #helm search repo stable
+  ``` 
+- 创建存储支持
+  ``` bash
+  # nfs-client.yml
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: nfs-client-provisioner
+
+    ---
+    kind: ClusterRole
+    apiVersion: rbac.authorization.k8s.io/v1
+    metadata:
+      name: nfs-client-provisioner-runner
+    rules:
+    - apiGroups: [""]
+        resources: ["persistentvolumes"]
+        verbs: ["get", "list", "watch", "create", "delete"]
+    - apiGroups: [""]
+        resources: ["persistentvolumeclaims"]
+        verbs: ["get", "list", "watch", "update"]
+    - apiGroups: ["storage.k8s.io"]
+        resources: ["storageclasses"]
+        verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+        resources: ["events"]
+        verbs: ["list", "watch", "create", "update", "patch"]
+    - apiGroups: [""]
+        resources: ["endpoints"]
+        verbs: ["create", "delete", "get", "list", "watch", "patch", "update"]
+
+    ---
+    kind: ClusterRoleBinding
+    apiVersion: rbac.authorization.k8s.io/v1
+    metadata:
+      name: run-nfs-client-provisioner
+    subjects:
+    - kind: ServiceAccount
+        name: nfs-client-provisioner
+        namespace: default
+    roleRef:
+      kind: ClusterRole
+      name: nfs-client-provisioner-runner
+      apiGroup: rbac.authorization.k8s.io
+    ---
+    kind: Deployment
+    apiVersion: apps/v1
+    metadata:
+      name: nfs-client-provisioner
+    spec:
+      selector:
+        matchLabels:
+          app: nfs-client-provisioner
+      replicas: 1
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          labels:
+            app: nfs-client-provisioner
+        spec:
+          serviceAccountName: nfs-client-provisioner
+          containers:
+            - name: nfs-client-provisioner
+              image: quay.io/external_storage/nfs-client-provisioner:latest
+              volumeMounts:
+                - name: nfs-client-root
+                  mountPath: /persistentvolumes
+              env:
+                - name: PROVISIONER_NAME
+                value: nfs-storage
+                - name: NFS_SERVER
+                value: 192.168.120.3   #修改为nfsIP地址
+                - name: NFS_PATH
+                value: /data/monitoring       #路径可自行修改
+          volumes:
+            - name: nfs-client-root
+              nfs:
+                server: 192.168.120.3  #修改为nfsIP地址
+                path: /data/monitoring       #路径可自行修改
+  ```
+  ``` bash
+  #prometheus-sc.yml
+    apiVersion: storage.k8s.io/v1
+    kind: StorageClass
+    metadata:
+      name: prometheus-nfsclass
+    provisioner: nfs-storage
+    ---
+    apiVersion: storage.k8s.io/v1
+    kind: StorageClass
+    metadata:
+      name: grafana-nfsclass
+    provisioner: nfs-storage
+  ``` 
+  #kubectl apply -f .
 - 拉取prometheus-operator
   ``` bash
   #helm pull stable/prometheus-operator
   #tar -zxvf prometheus-operator-8.3.3.tgz
   #cd prometheus-operator 
   ``` 
+  
 - 根据需求修改配置文件
   ``` yaml
   #vi values.yml
@@ -48,7 +154,7 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
     ## Port to expose on each node
     ## Only used if service.type is 'NodePort'
     ##
-    nodePort: 30903
+    nodePort: 30903 修改nodeport端口
     ## List of IP addresses at which the Prometheus server service is available
     ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
     ##
@@ -57,7 +163,7 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
     loadBalancerSourceRanges: []
     ## Service type
     ##
-    type: NodePort
+    type: NodePort 
   #修改prometheus的服务，添加nondePort和修改类型为nodePort
     service:
     annotations: {}
@@ -90,6 +196,16 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
     type: NodePort
 
     sessionAffinity: ""
+    #添加上面部署的prometheus的storageclass
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: prometheus-nfsclass 
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+
   ```
   ``` yaml
   #vi charts/grafana/values.yaml
@@ -103,71 +219,25 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
   annotations: {}
   labels: {}
   portName: service
-  ```
-- 持久化数据
-  ``` yaml
-  #创建pv，持久化prometheus的数据
-  #vi pvc.yaml
-  apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: influxdb-pvc
-    namespace: monitoring
-    labels:
-      app: influxdb
-      release: influxdb
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    storageClassName: monitor-ebs  # 选择合适的存储类，这里需要提前创建一个存储类
-    resources:
-      requests:
-        storage: 200Gi  # 设置合适的存储空间
-  ```
-- 创建influxdb.yml
-  ``` yaml
-  # 持久化存储配置
+  #配置grafana的存储类
   persistence:
-    enabled: true
-    useExisting: true
-    name: "influxdb-pvc"  # 使用我们刚才创建的 PVC
-    accessMode: "ReadWriteOnce"
-    size: 200Gi
-
-  # 创建 Prometheus 的数据库
-  env:
-    - name: INFLUXDB_DB
-      value: "prometheus"
-
-  # influxdb 配置
-  config:
-    data:
-      # 这两个配置默认限制了数据的上限，建议设置为 0 变成无限制，不然在达到上限后插入数据会返回错误
-      max_series_per_database: 0
-      max_values_per_tag: 0
-    http:
-      enabled: true  # 启动 http
-  initScripts:
-    enabled: true
-    scripts:
-      # 设置数据保留策略，默认是永不失效，需要人工清理
-      # 保留 180 天数据
-      retention.iql: |+
-        CREATE RETENTION POLICY "default_retention_policy" on "prometheus" DURATION 180d REPLICATION 1 DEFAULT
+  type: pvc
+  enabled: true
+  storageClassName: grafana-nfsclass
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+  # annotations: {}
+  finalizers:
+    - kubernetes.io/pvc-protection
+  # subPath: ""
+  # existingClaim:
   ```
-  max-series-per-database  
-  内存中每个数据库最大的序列数量，默认是 1000000，设置为 0 改成无限制。如果新来的数据增加了序列数量并超过了这个上限，那么数据就会被丢弃就并返回一个 500 错误：
-  ``` text
-  {"error":"max series per database exceeded: <series>"}
-  ```
-  max-values-per-tag  
-  内存中每个标签的最大数据量，默认是 100000，设置为 0 改成无限制。如果新来的数据超过了这个限制，也会被丢弃并返回写入失败的错误。
-  ``` bash
-  #helm install --name=influxdb --namespace=monitoring -f influxdb.yaml stable/influxdb
 
 - 部署crds
   ``` yaml
   #kubectl apply -f crds/
+  #kubectl create ns monitoring
   ```
 - 部署prometheus-operator
   ``` yaml
@@ -189,7 +259,7 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
   [root@master1 prometheus-operator]# kubectl get svc -n monitoring
   NAME                                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
   alertmanager-operated                     ClusterIP   None            <none>        9093/TCP,9094/TCP,9094/UDP   4h7m
-  prometheus-grafana                        NodePort    10.96.174.253   <none>        80:30030/TCP                 4h7m
+  prometheus-grafana                        NodePort    10.96.174.253   <none>        80:30080/TCP                 4h7m
   prometheus-kube-state-metrics             ClusterIP   10.96.246.166   <none>        8080/TCP                     4h7m
   prometheus-operated                       ClusterIP   None            <none>        9090/TCP                     4h7m
   prometheus-prometheus-node-exporter       ClusterIP   10.96.95.92     <none>        9100/TCP                     4h7m
@@ -211,4 +281,102 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
   # vi /etc/kubernetes/manifests/etcd.yaml 
   - --listen-metrics-urls=http://0.0.0.0:2381
   ``` 
-  
+- 配置grafana。
+  ``` bash
+  #获取grafana密码  
+  #kubectl get secrets prometheus-grafana  -n monitoring -o jsonpath="{.data.admin-password}" | base64 --decode;echo 
+  ```
+  添加监控模板  
+  ![Image text](../img/grafana-home.png)  
+  ![Image text](../img/grafana-import.png)  
+  ![Image text](../img/grafana-show.png)  
+- 安装kubernetes插件  
+  #kubectl exec -it prometheus-grafana-85b58d9759-q5vjb -c grafana  -n monitoring /bin/bash  
+  ``` bash
+  bash-5.0$ bin/grafana-cli plugins install grafana-kubernetes-app 
+  installing grafana-kubernetes-app @ 1.0.1
+  from: https://grafana.com/api/plugins/grafana-kubernetes-app/versions/1.0.1/download
+  into: /var/lib/grafana/plugins
+
+    ✔ Installed grafana-kubernetes-app successfully 
+
+    Restart grafana after installing plugins . <service grafana-server restart>
+
+  ```
+  #重启pods
+  #kubectl delete pods prometheus-grafana-85b58d9759-q5vjb  -n monitoring
+  登陆grafana，在红色位置会看到kubernetes插件已经安装成功  
+  ![Image text](../img/grafana-home.png)   
+  点进去后，如下图选择链接的图标配置插件  
+  ![Image text](../img/grafana-home.png)   
+  这里我们可以添加一个新的 Kubernetes 集群，这里需要填写集群的访问地址：https://kubernetes.default，然后比较重要的是集群访问的证书，勾选上TLS Client Auth和With CA Cert这两项。  
+  ![Image text](../img/grafana-k8s-plugin-config.png)   
+  集群访问的证书文件，用我们访问集群的 kubectl 的配置文件中的证书信息(~/.kube/config)即可，其中属性certificate-authority-data、client-certificate-data、client-key-data就对应这 CA 证书、Client 证书、Client 私钥，不过 config 文件里面的内容是base64编码过后的，所以我们这里填写的时候要做base64解码。
+  ``` bash
+   # grep certificate-authority-data: /root/.kube/config |awk '{print $2}' |base64 --decode
+    -----BEGIN CERTIFICATE-----
+    MIICyDCCAbCgAwIBAgIBADANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwprdWJl
+    cm5ldGVzMB4XDTIwMDExMDIyMTI1N1oXDTMwMDEwNzIyMTI1N1owFTETMBEGA1UE
+    AxMKa3ViZXJuZXRlczCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANIH
+    JfYG0VKKxgwzFaf84bLDqo2PuO7i1bdA0kb7NNYeT5O26qDgoJUanAxL+k9VmL4t
+    JGzcskKcpIFfF+fzzv6ajhj+PLBakejToBiw7+3Nj1WvC0aKWVdC5vwdJa3QZbPE
+    g2xXsLV5RPNPTySEIFXwfMvH6WcGJMfwa8LtyiXx7h/GlzlC2m9rNXszO6Hmcq8b
+    VjgjLqWS0HiXPx9d6meTUVZlWdcEnUpNK520USfc4mGjvkvomjMQlZJzOlqQxwU9
+    Lt0tjTCr6yEmWIFJn2r6ZEor4m620aK2imp78FxS5/YiZNCn6GWGap1BxtblBPhn
+    2oUMfO/4H2uSH1wk430CAwEAAaMjMCEwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB
+    /wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAGQ1aD+AoeWoQ8DUhDD4YjRyuUmO
+    CfgBpmnHNzWHIw22I+RaXM7dFjBPJIzOeCgYmW5SuRoVxpoqbxEjcu5huw+3G+HU
+    Wl+qKssLyB4suG1YzNdwQdrSi87BkghD6mjaALVYrNJMJH2JHbxsXOhi7t3zEqdr
+    N8O5l6J1aI6B1iB8dFMNCBbnHyYvUyA1Pll65hbIgTAzxiqPwNury8AYG0M1oTZa
+    zLu0q3larAcNPyOoXcQ64Uy2DxKsRNdmEw2PSn7e7KHiBfiTssfK73IrZYMHqJel
+    ctladMYkZTQLnxJZbwjLikTHnRMYBR0hjgoYYEytDBkHdpY/dUJGxZGa0sM=
+    -----END CERTIFICATE-----
+   #grep client-certificate-data: /root/.kube/config |awk '{print $2}' |base64 --decode
+    -----BEGIN CERTIFICATE-----
+    MIIC8jCCAdqgAwIBAgIIQfUUWd6WIZ0wDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+    AxMKa3ViZXJuZXRlczAeFw0yMDAxMTAyMjEyNTdaFw0yMTAxMDkyMjEyNThaMDQx
+    FzAVBgNVBAoTDnN5c3RlbTptYXN0ZXJzMRkwFwYDVQQDExBrdWJlcm5ldGVzLWFk
+    bWluMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApXTQ5LGTjWtabjzb
+    EhpYGhXYIziaL/UiO2YEPJEVzfLFaETjuA0HJgc8lowEo9klDu9iap7droEp+CRi
+    gcGOxdSOWleCMWqlrZFi284G9zQPhPSfB9rVeKjEI7KHhG4FZwRY0eTtv8tm70AI
+    LNadEgR+nHPj/S+dpOzXVtHcDFc4aSiOsr6idGKgWBUVrg/JCr1p3x6wVEeCMkWP
+    jBbGKAJtMLZSpfN6cm9kLCMQ5D/LKaK2llQk6kjHZeSfF7CImmSBB20dO/D5KKMG
+    VWU7ustHmlpBauxwxgvNpuW5mUkqAdEmhVZBLhjXO3YRO84c02H6yOh3z4vsYKd6
+    ZMpPhQIDAQABoycwJTAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUH
+    AwIwDQYJKoZIhvcNAQELBQADggEBABtbdOeZGBVCf8HSCPRDNj0JRZC2E0JJ1oFa
+    Atwb6HNC6Po9n+RuINhHqX820gZuYGgtAMMC6IfJL9x3w7hVO9IP8fr5b6WoxIDi
+    i3owndSeuGtHIGUioGevOJiPUo1317Tq/pNArkcm1rC9ZhseNTy5Egn8ooPehq8W
+    C7Ccj38ASYNODFgPTe06fbc17EZuJGSl+AoCzumiImBFt+LkvyhepiPv2G6vHIHJ
+    dNzeiwzf4mdOXWacrIiXosjt9Mz75Xb1oHrnasQUNaKJKipos75i9y7n4idhZpcH
+    1YkYhNkROeiUx0Uml6PSNfq0ScsfauU0gKcmTE1cm2r1SVipsSs=
+    # grep client-key-data: /root/.kube/config |awk '{print $2}' |base64 --decode
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEApXTQ5LGTjWtabjzbEhpYGhXYIziaL/UiO2YEPJEVzfLFaETj
+    uA0HJgc8lowEo9klDu9iap7droEp+CRigcGOxdSOWleCMWqlrZFi284G9zQPhPSf
+    B9rVeKjEI7KHhG4FZwRY0eTtv8tm70AILNadEgR+nHPj/S+dpOzXVtHcDFc4aSiO
+    sr6idGKgWBUVrg/JCr1p3x6wVEeCMkWPjBbGKAJtMLZSpfN6cm9kLCMQ5D/LKaK2
+    llQk6kjHZeSfF7CImmSBB20dO/D5KKMGVWU7ustHmlpBauxwxgvNpuW5mUkqAdEm
+    hVZBLhjXO3YRO84c02H6yOh3z4vsYKd6ZMpPhQIDAQABAoIBAEPObdVrWNb6CeNn
+    mTgAB98Y2K0Gg1noEhFZq57OrqrqNTCYGuLQo/9Xs+LWmwgy81b9j822MY9Ua8i/
+    0IbwtfwpMfWgK0DpPeC11lfSRVSFx15rickES7vZHhirD5KcLCadx3CtaynQx+yA
+    x1jo0xIROXoQnHykSOzQCygPdSiw5T5CzFFXI6VqMayKvUZN2G/6SOoqlVwfOyP+
+    xJjtIeFdTu/U9rrnm9B2cDcy4VpU9mzbQk6QsTivGPCP+pRnzKfNxVpBfzPugkXp
+    aikGoUug1K6xg75T6GNWYISf05aThCtebJvogbD4Yqe9C2r+vzF3xbaey5LK89aE
+    pErFGXkCgYEA0OzSfrVH884c/nrWaIelQYGfMXk4peE57SJVIjdykl52Pq6DCA1P
+    TZLA+aNYRfkqN5sIKyZueZTWvLv6AGtt5nO5wO5FfkM46HfRcrDWKlDpsgca+K/9
+    XWi22oZ1m67FTviIJnYpSVoeQlwDScn8QAxmoNvdUEkMjRmF7K+xX6sCgYEAyryi
+    0xTvg7uf1D3G7EcKrChiZqQgMCs3msnh+LRq6N01obwiakLy6ymCwUGjRPMRmqGX
+    +qdSzulkYH1WgbszxeX7PkvpeuPsfLLrKKzEf8mFKa6QG6WuhVAJmBv+MWn2E0iM
+    4nNwBGotXplCq+q8eMAhAkngaa2+Y6Ea2skenY8CgYEAyGGrzj1+olcYtfcI977K
+    AFcbYW8bpvWrAkbAko3NxJb3IE1ufWWOnx9XGNfTDWHaXPTD0+cLZG8dum0sbgSb
+    psFt8p5VZrGAvm5VI4R6FKIAUnDALK9W+aU6Y8M8v7HTqldy9ji0hpb5mLn5qWci
+    GigKstPNo3g8ooRNT+J+4/sCgYBhUH7P14LItu0XUbgEfm1PCeuB3VJeDMCaGkHP
+    wbp3oIc35TiXzR8RZlGPNlSKqipPETYEaQDEtR8reb5mc1d8rNIWqxWdmX5QtQlP
+    8u43cKHsyg/+VV8aOrsAOp+fVH977h1CLasdU2IHwIVSRFDHnWG62X9Q+scix5g+
+    YL/DXQKBgFadobr40+OvkKZyOjzHxrdX4mvEF/aT65nNAAzWs+s+cg0SaohFTu8N
+    ZzGWhk4nfkJCXKQvtaxgbY/qq+/LG7IE2eIunzZGgN0GqfqDN4uJ1/R0BTHHiDg0
+    wsGIOwV7vaCCa0ESzDzHKsS9TiuCn5gUyYaAfeZ1BxEs56B9P83d
+    -----END RSA PRIVATE KEY-----
+    ```
+    ![Image text](../img/grafana-k8s-plugin2.png)
+    

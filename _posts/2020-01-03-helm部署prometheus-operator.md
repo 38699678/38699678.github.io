@@ -306,9 +306,9 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
   #重启pods
   #kubectl delete pods prometheus-grafana-85b58d9759-q5vjb  -n monitoring
   登陆grafana，在红色位置会看到kubernetes插件已经安装成功  
-  ![Image text](../img/grafana-home.png)   
+  ![Image text](../img/plugin-kubernetes.png)   
   点进去后，如下图选择链接的图标配置插件  
-  ![Image text](../img/grafana-home.png)   
+  ![Image text](../img/grafana-k8s-plugin.png)   
   这里我们可以添加一个新的 Kubernetes 集群，这里需要填写集群的访问地址：https://kubernetes.default，然后比较重要的是集群访问的证书，勾选上TLS Client Auth和With CA Cert这两项。  
   ![Image text](../img/grafana-k8s-plugin-config.png)   
   集群访问的证书文件，用我们访问集群的 kubectl 的配置文件中的证书信息(~/.kube/config)即可，其中属性certificate-authority-data、client-certificate-data、client-key-data就对应这 CA 证书、Client 证书、Client 私钥，不过 config 文件里面的内容是base64编码过后的，所以我们这里填写的时候要做base64解码。
@@ -379,4 +379,4 @@ Operator 是以软件的方式定义运维过程，是一系列打包、部署�
     -----END RSA PRIVATE KEY-----
     ```
     ![Image text](../img/grafana-k8s-plugin2.png)
-    
+

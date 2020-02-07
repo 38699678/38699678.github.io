@@ -145,6 +145,8 @@ docker run -d   --name mysql-6606 --net="host"  -e DATA_SOURCE_NAME="root:tjc8dF
 #curl 127.0.0.1:9104/metrics
 mysql_up 1 
 #此处为1是正常
+```
+- 创建prometheus监控规则
 ``` bash
 #此处我监控了多个mysql实例
 [root@pre-k8s-master mysql]# more mysql_endpoint.yml

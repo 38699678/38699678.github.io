@@ -138,6 +138,7 @@
 - 安装MHA 
   在MHA服务节点和下面每个master和slave节点中都执行安装yum命令。mha4mysql-node-0.58-0.el7.centos.noarch.rpm要在每个节点中安装，mha4mysql-manager-0.58-0.el7.centos.noarch.rpm要在mha的管理节点安装
   ``` bash 
+  #rpm -ivh https://mirrors.aliyun.com/epel/epel-release-latest-7.noarch.rpm
   #yum -y install perl perl-DBI perl-DBD-MySQL perl-IO-Socket-SSL perl-Time-HiRes perl-DBD-MySQL perl-Config-Tiny perl-Log-Dispatch perl-Parallel-ForkManager perl-Config-IniFiles  
   #yum install -y mha4mysql-manager-0.58-0.el7.centos.noarch.rpm mha4mysql-node-0.58-0.el7.centos.noarch.rpm  
   #mkdir -p /data/masterha/{bss,rcs,osmc}  

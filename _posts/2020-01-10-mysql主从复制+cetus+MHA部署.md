@@ -320,6 +320,9 @@
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.13   
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.14    
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.15   
+  在mysql master中创建监控用户，赋予管理员权限。  
+  #create user 'mhaty'@'192.168.120.%' identified with mysql_native_password 'uqnFBzTpmhg4wF3ay1bvQ5o';
+  #grant all on *.* to 'mhaty'@'192.168.120.%';
   创建配置文件
     cat /data/masterha/bss.cnf  
   ``` bash
@@ -336,7 +339,7 @@
     repl_password="aaaa" 
     ping_interval=1
     report_script=""
-    #此处为配置脚本执行时的参数，主要是主从的信息
+    #此处为配置脚本执行时的参数，主要是主从的信息。-s 为mysql slave地址。
     secondary_check_script=/usr/bin/masterha_secondary_check -s 172.18.178.228 -s 172.18.178.230 --user=root --master_host=172.18.178.226 --master_port=6606 
     shutdown_script=""
     master_ip_failover_script=""
@@ -419,9 +422,9 @@
     admin-username=admin
     admin-password=admin
   ```
-  #vi cetus/users.json
+  #vi cetus/users.json 
+  users.json用来配置用户登陆信息，采用键值对的结构，其中键是固定的，值是用户在MySQL创建的登陆用户名和密码。其中user的值是用户名；client_pwd的值是前端登录Cetus的密码;server_pwd的值是Cetus登录后端的密码。  
   ``` text
-  #users.json用来配置用户登陆信息，采用键值对的结构，其中键是固定的，值是用户在MySQL创建的登陆用户名和密码。其中user的值是用户名；client_pwd的值是前端登录Cetus的密码;server_pwd的值是Cetus登录后端的密码。
   {
 	"users":	[{
 			"user":	"root",
@@ -435,6 +438,7 @@
   } 
   ``` 
   1.cetus文件替换MHA文件  
+  进入cetus安装目录
   使用 mha_ld/src 替换所有文件/usr/share/perl5/vendor_perl/MHA/目录的所有同名文件  
   使用 mha_ld/masterha_secondary_check替换masterha_secondary_check命令   
   #/usr/bin/masterha_secondary_check  

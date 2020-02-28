@@ -143,7 +143,7 @@
   #yum install -y mha4mysql-manager-0.58-0.el7.centos.noarch.rpm mha4mysql-node-0.58-0.el7.centos.noarch.rpm  
   #mkdir -p /data/masterha/{bss,rcs,osmc}  
   ```
-  在集群的master和slave节点中，配置无密码登陆，确保在任何一个节点都可以登陆其他节点。  
+  **在集群的master和slave节点中，配置无密码登陆，确保在任何一个节点都可以登陆其他节点**
   #ssh-keygen -t rsa  
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.3    
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.13   

@@ -1,7 +1,7 @@
 # cetus+MHA+mysql主从部署
 ### mysql安装  
 - 本文mysql数据使用的是mysql8版本。  
-``` bash
+``` bash  
 	#wget https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.17-el7-x86_64.tar.gz  
 	#tar -zxvf mysql-8.0.17-el7-x86_64.tar.gz  
 	#mv mysql-8.0.17-el7-x86_64 mysql  

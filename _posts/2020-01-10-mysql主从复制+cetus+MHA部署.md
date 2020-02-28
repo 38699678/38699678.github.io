@@ -321,9 +321,9 @@
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.14    
   #ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.120.15   
   在mysql master中创建监控用户，赋予管理员权限。  
-  #create user 'mhaty'@'192.168.120.%' identified with mysql_native_password 'uqnFBzTpmhg4wF3ay1bvQ5o';
-  #grant all on *.* to 'mhaty'@'192.168.120.%';
-  创建配置文件
+  #create user 'mhaty'@'192.168.120.%' identified with mysql_native_password 'uqnFBzTpmhg4wF3ay1bvQ5o';  
+  #grant all on *.* to 'mhaty'@'192.168.120.%';  
+  创建配置文件  
     cat /data/masterha/bss.cnf  
   ``` bash
     [server default]

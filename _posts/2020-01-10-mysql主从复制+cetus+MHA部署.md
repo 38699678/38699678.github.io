@@ -6,8 +6,8 @@
   #mv mysql-8.0.17-el7-x86_64 mysql  
   #cd myql  
   #mkdir -p /data/  
-  #groupadd mysql && useradd -r -g mysql -s /bin/false mysql
-  #vi /usr/local/mysql/mysql.cnf
+  #groupadd mysql && useradd -r -g mysql -s /bin/false mysql  
+  #vi /usr/local/mysql/mysql.cnf  
 - 初始化数据库  
   #cd /usr/local/mysql/bin  
   #./mysqld --defaults-file=/usr/local/mysql/mysql6626.cnf --initialize  

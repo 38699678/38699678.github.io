@@ -17,6 +17,7 @@ MDS介绍：
 ### 创建一个ceph file system  
 1. 创建两个存储池，需要建立两个存储池。一个存储池用来保存元数据，一个存储池用来保存数据文件。
 ``` bash  
+#ceph-deploy mds {node.name}
 $ ceph osd pool create cephfs_data
 $ ceph osd pool create cephfs_metadata
 ```

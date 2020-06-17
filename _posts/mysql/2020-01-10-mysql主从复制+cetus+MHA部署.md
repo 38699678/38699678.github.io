@@ -366,7 +366,7 @@
   ``` bash
   middle_ipport=192.168.120.3:9606
   middle_user=admin
-  middle_pass=admin
+  middle_pass=admin #此处的用户名和密码是cetus的管理员用户名和密码，在cetus的proxy.conf中配置
   ```
 - 部署cetus  
   ``` bash

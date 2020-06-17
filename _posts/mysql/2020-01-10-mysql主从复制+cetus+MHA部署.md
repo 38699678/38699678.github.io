@@ -273,10 +273,10 @@
   ```
 ### 安装MHA+Cetus
 - MHA知识  
-  HA（Master High Availability）是一套相对成熟的MySQL高可用方案，能做到在0~30s内自动完成数据库的故障切换操作，在master服务器不宕机的情况下，本能保证数据的一致性。    
-  1.它由两部分组成：MHA Manager（管理节点）和MHA Node（数据节点）。其中，MHA Manager可以单独部署在一台独立的机器上管理多个master-slave集群，也可以部署在一台slave上。MHA Node则运行在每个mysql节点上，MHA Manager会定时探测集群中的master节点，当master出现故障时，它自动将最新数据的slave提升为master，然后将其它所有的slave指向新的master。  
-  2.在MHA自动故障切换过程中，MHA试图保存master的二进制日志，从而最大程度地保证数据不丢失，当这并不总是可行的，譬如，主服务器硬件故障或无法通过ssh访问，MHA就没法保存二进制日志，这样就只进行了故障转移但丢失了最新数据。可结合MySQL 5.5中推出的半同步复制来降低数据丢失的风险。    
-  MHA软件由两部分组成：Manager工具包和Node工具包，具体说明如下：      
+  - HA（Master High Availability）是一套相对成熟的MySQL高可用方案，能做到在0~30s内自动完成数据库的故障切换操作，在master服务器不宕机的情况下，本能保证数据的一致性。    
+  - 它由两部分组成：MHA Manager（管理节点）和MHA Node（数据节点）。其中，MHA Manager可以单独部署在一台独立的机器上管理多个master-slave集群，也可以部署在一台slave上。MHA Node则运行在每个mysql节点上，MHA Manager会定时探测集群中的master节点，当master出现故障时，它自动将最新数据的slave提升为master，然后将其它所有的slave指向新的master。  
+  - 在MHA自动故障切换过程中，MHA试图保存master的二进制日志，从而最大程度地保证数据不丢失，当这并不总是可行的，譬如，主服务器硬件故障或无法通过ssh访问，MHA就没法保存二进制日志，这样就只进行了故障转移但丢失了最新数据。可结合MySQL 5.5中推出的半同步复制来降低数据丢失的风险。    
+- MHA软件由两部分组成：Manager工具包和Node工具包，具体说明如下：      
 ``` text
     MHA Manager：
 
